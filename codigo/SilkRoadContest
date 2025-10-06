@@ -1,0 +1,123 @@
+import java.util.*;
+import java.lang.reflect.*;
+
+public class SilkRoadContest {
+
+    public int[] dailyProfits;       // ganancias acumuladas por día
+    public SilkRoad simulator;       // simulación activa
+
+    /**
+     * Resuelve el problema de la maratón.
+     * Recibe un arreglo de eventos donde {0} separa los días.
+     * Retorna un arreglo con las ganancias diarias acumuladas.
+     * Ejecuta todo en modo invisible, sin mostrar diálogos ni gráficos.
+     */
+    public int[] solve(int[][] days) {
+        List<List<int[]>> allDays = dividirPorDias(days);
+        dailyProfits = new int[allDays.size()];
+
+        SilkRoad silkRoad = null;
+
+        for (int i = 0; i < allDays.size(); i++) {
+            List<int[]> eventos = allDays.get(i);
+
+            if (i == 0) {
+                silkRoad = createSilentSilkRoad(toArray(eventos));
+                silkRoad.moveRobots();
+            } else {
+                silkRoad.reboot();
+                for (int[] e : eventos) {
+                    if (e[0] == 1) silkRoad.placeRobot(e[1]);
+                    else if (e[0] == 2 && e.length == 3) silkRoad.placeStore(e[1], e[2]);
+                }
+                silkRoad.moveRobots();
+            }
+
+            dailyProfits[i] = silkRoad.profit();
+        }
+
+        return dailyProfits;
+    }
+
+    /**
+     * Crea un SilkRoad en modo silencioso usando reflexión
+     */
+    private SilkRoad createSilentSilkRoad(int[][] days) {
+        try {
+            Constructor<SilkRoad> constructor = SilkRoad.class.getDeclaredConstructor(int[][].class, boolean.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(days, true);
+        } catch (Exception e) {
+            throw new RuntimeException("Error creando SilkRoad en modo silencioso", e);
+        }
+    }
+
+    /**
+     * Simula día a día paso a paso, mostrando mensajes si slow == true.
+     */
+    public void simulate(int[][] days, boolean slow) {
+        List<List<int[]>> allDays = dividirPorDias(days);
+        simulator = null;
+
+        for (int day = 0; day < allDays.size(); day++) {
+            List<int[]> eventos = allDays.get(day);
+
+            if (simulator == null) {
+                simulator = new SilkRoad(toArray(eventos));
+                simulator.moveRobots();
+                if (slow) javax.swing.JOptionPane.showMessageDialog(null, "🟢 Día " + (day + 1) + " iniciado (inicialización)");
+                if (slow) javax.swing.JOptionPane.showMessageDialog(null, "💰 Ganancia del día: " + simulator.profit());
+            } else {
+                simulator.reboot();
+                if (slow) javax.swing.JOptionPane.showMessageDialog(null, "🟢 Día " + (day + 1) + " iniciado");
+
+                for (int[] e : eventos) {
+                    if (e[0] == 1) {
+                        simulator.placeRobot(e[1]);
+                        if (slow) javax.swing.JOptionPane.showMessageDialog(null, "🤖 Robot colocado en " + e[1]);
+                    } else if (e[0] == 2 && e.length == 3) {
+                        simulator.placeStore(e[1], e[2]);
+                        if (slow) javax.swing.JOptionPane.showMessageDialog(null, "🏪 Tienda en " + e[1] + " con " + e[2] + " tenges");
+                    }
+                }
+
+                simulator.moveRobots();
+                if (slow) javax.swing.JOptionPane.showMessageDialog(null, "💰 Ganancia del día: " + simulator.profit());
+            }
+        }
+
+        if (slow) javax.swing.JOptionPane.showMessageDialog(null, "🏁 Fin de la simulación.");
+    }
+
+    /**
+     * Divide el arreglo de eventos en lista de días usando {0} como separador.
+     */
+    private List<List<int[]>> dividirPorDias(int[][] days) {
+        List<List<int[]>> allDays = new ArrayList<>();
+        List<int[]> currentDay = new ArrayList<>();
+
+        for (int[] d : days) {
+            if (d.length == 1 && d[0] == 0) {
+                if (!currentDay.isEmpty()) {
+                    allDays.add(new ArrayList<>(currentDay));
+                    currentDay.clear();
+                }
+            } else {
+                currentDay.add(d);
+            }
+        }
+
+        if (!currentDay.isEmpty()) {
+            allDays.add(currentDay);
+        }
+
+        return allDays;
+    }
+
+    /**
+     * Convierte lista de arrays a array bidimensional.
+     */
+    private int[][] toArray(List<int[]> list) {
+        return list.toArray(new int[0][0]);
+    }
+}
