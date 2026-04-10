@@ -1,0 +1,148 @@
+import java.util.List;
+
+/**
+ * Represents a visual progress bar that shows the progress of collecting tenges
+ * in relation to the maximum available from stores and robots.
+ */
+public class ProgressBar {
+    private Rectangle background;
+    private Rectangle fill;
+    private Rectangle border;
+    private boolean visible;
+    private static final int WIDTH = 300;
+    private static final int HEIGHT = 25;
+    private static final int X_POSITION = 50;
+    private static final int Y_POSITION = 510;
+    private static final int BORDER_SIZE = 2;
+    private List<Store> stores;
+    private List<Robot> robots;
+    private int lastFillWidth = 0;
+
+    /**
+     * Creates a new progress bar.
+     */
+    public ProgressBar(List<Store> stores, List<Robot> robots) {
+        this.stores = stores;
+        this.robots = robots;
+        this.visible = false;
+        initializeComponents();
+
+        // Connect this progress bar to all robots
+        for (Robot robot : robots) {
+            robot.setProgressBar(this);
+        }
+    }
+
+    /**
+     * Initializes the graphical components of the progress bar.
+     */
+    private void initializeComponents() {
+        // Black border for better visibility
+        border = new Rectangle();
+        border.changeSize(HEIGHT + 4, WIDTH + 4);
+        border.changeColor("black");
+        border.moveHorizontal(X_POSITION - 2);
+        border.moveVertical(Y_POSITION - 2);
+
+        // White background of the bar
+        background = new Rectangle();
+        background.changeSize(HEIGHT, WIDTH);
+        background.changeColor("white");
+        background.moveHorizontal(X_POSITION);
+        background.moveVertical(Y_POSITION);
+
+        // Green fill representing the progress
+        fill = new Rectangle();
+        fill.changeSize(HEIGHT - (BORDER_SIZE * 2), 1); // Height with margin, minimum width
+        fill.changeColor("green");
+        fill.moveHorizontal(X_POSITION + BORDER_SIZE);
+        fill.moveVertical(Y_POSITION + BORDER_SIZE);
+    }
+
+    /**
+     * Calculates the current total of tenges held by all robots.
+     */
+    private int calculateCurrentRobotTenges() {
+        int totalTenges = 0;
+        for (Robot robot : robots) {
+            totalTenges += robot.getTenges();
+        }
+        return totalTenges;
+    }
+
+    /**
+     * Calculates the current maximum tenges available in stores + tenges in robots.
+     */
+    private int calculateCurrentMaxTenges() {
+        int totalTenges = 0;
+        for (Store store : stores) {
+            totalTenges += store.getTenges();
+        }
+        for (Robot robot : robots) {
+            totalTenges += robot.getTenges();
+        }
+        return totalTenges;
+    }
+
+    /**
+     * Updates the visual progress bar.
+     */
+    public void update() {
+        if (!visible) {
+            return;
+        }
+
+        int currentRobotTenges = calculateCurrentRobotTenges();
+        int currentMaxTenges = calculateCurrentMaxTenges();
+
+        if (currentMaxTenges == 0) {
+            if (fill != null) {
+                fill.makeInvisible();
+            }
+            return;
+        }
+
+        double progressPercentage = (double) currentRobotTenges / currentMaxTenges;
+        int fillWidth = (int) (progressPercentage * (WIDTH - (BORDER_SIZE * 2)));
+        fillWidth = Math.max(1, Math.min(fillWidth, WIDTH - (BORDER_SIZE * 2)));
+
+        if (fill != null) {
+            fill.makeInvisible();
+        }
+
+        fill = new Rectangle();
+        fill.changeSize(HEIGHT - (BORDER_SIZE * 2), fillWidth);
+        fill.changeColor("green");
+        fill.moveHorizontal(X_POSITION + BORDER_SIZE);
+        fill.moveVertical(Y_POSITION + BORDER_SIZE);
+        fill.makeVisible();
+
+        lastFillWidth = fillWidth;
+    }
+
+    /**
+     * Makes the progress bar visible.
+     */
+    public void makeVisible() {
+        if (!visible) {
+            border.makeVisible();
+            background.makeVisible();
+            visible = true;
+            update();
+        }
+    }
+
+    /**
+     * Hides the progress bar.
+     */
+    public void makeInvisible() {
+        if (visible) {
+            border.makeInvisible();
+            background.makeInvisible();
+            if (fill != null) {
+                fill.makeInvisible();
+            }
+            visible = false;
+        }
+    }
+}

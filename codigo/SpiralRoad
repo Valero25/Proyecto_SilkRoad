@@ -1,0 +1,240 @@
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import javax.swing.JOptionPane;
+
+/**
+ * Represents the spiral path where robots and stores are placed.
+ * Each cell is stored in the order of traversal and can contain graphic objects.
+ */
+public class SpiralRoad {
+    private static final int CELL_SIZE = 25;
+    private static final int MARGIN = 6;
+    private static final int CANVAS_WIDTH = 500;
+    private static final int CANVAS_HEIGHT = 500;
+    private ArrayList<Rectangle> rectangles;
+    private ArrayList<Circle> circles;
+    private HashMap<String, Cell> cells;
+    private int length;
+    private ArrayList<int[]> cellsInOrder;
+    private static SpiralRoad instance;
+
+    /**
+     * Builds a spiral path with a given size.
+     *
+     * @param length the base size of the spiral
+     */
+    public SpiralRoad(int length) {
+        this.length = length;
+        rectangles = new ArrayList<>();
+        circles = new ArrayList<>();
+        cells = new HashMap<>();
+        cellsInOrder = new ArrayList<>();
+        instance = this;
+    }
+
+    /**
+     * Returns the unique instance of {@code SpiralRoad}.
+     *
+     * @return current SpiralRoad instance
+     */
+    public static SpiralRoad getInstance() {
+        return instance;
+    }
+
+    /**
+     * Draws the spiral path and registers cells in order.
+     */
+    public void draw() {
+        int x = 0, y = 0;
+        int dx = 1, dy = 0;
+    
+        int maxCols = CANVAS_WIDTH / CELL_SIZE;
+        int maxRows = CANVAS_HEIGHT / CELL_SIZE;
+    
+        HashSet<String> occupied = new HashSet<>();
+    
+        int prevX = -1, prevY = -1;
+    
+        for (int i = 0; i < length; i++) {
+            if (!validateCellLimit()) return;
+    
+            registerCell(x, y, occupied);
+    
+            int nextX = x + dx;
+            int nextY = y + dy;
+    
+            boolean willTurn = needsTurn(nextX, nextY, maxCols, maxRows, occupied);
+            boolean isSolidBlock = (prevX != -1 && willTurn);
+    
+            drawCell(x, y, dx, dy, isSolidBlock);
+    
+            prevX = x;
+            prevY = y;
+    
+            if (willTurn) {
+                int[] newDir = changeDirection(dx, dy);
+                dx = newDir[0];
+                dy = newDir[1];
+                nextX = x + dx;
+                nextY = y + dy;
+            }
+    
+            x = nextX;
+            y = nextY;
+        }
+    }
+
+    /** 
+     * Verifies if the maximum allowed number of cells has been reached.
+     */
+    private boolean validateCellLimit() {
+        if (cellsInOrder.size() >= 400) {
+            JOptionPane.showMessageDialog(null,
+                "❌ The maximum of 400 cells in the spiral has been exceeded.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
+    /** 
+     * Registers the cell in the list and in occupied set.
+     */
+    private void registerCell(int x, int y, HashSet<String> occupied) {
+        cellsInOrder.add(new int[]{x, y});
+        occupied.add(x + "," + y);
+    }
+
+    /** 
+     * Decides if a turn is needed before advancing.
+     */
+    private boolean needsTurn(int nextX, int nextY, int maxCols, int maxRows, HashSet<String> occupied) {
+        return (nextX < 0 || nextX >= maxCols ||
+                nextY < 0 || nextY >= maxRows ||
+                occupied.contains(nextX + "," + nextY));
+    }
+
+    /** 
+     * Draws rectangle and circle (if applicable).
+     */
+    private void drawCell(int x, int y, int dx, int dy, boolean isSolidBlock) {
+        Rectangle r = createRectangle(x, y, dx, dy, isSolidBlock);
+        rectangles.add(r);
+    
+        if (!isSolidBlock) {
+            Circle c = createCircle(x, y);
+            circles.add(c);
+    
+            String key = x + "," + y;
+            Cell cell = cells.getOrDefault(key, new Cell(x, y));
+            cell.addObject(c);
+            cells.put(key, cell);
+        }
+    }
+
+    /**
+     * Creates a rectangle at the given position on the board.
+     * Adjusts its size and position if it's not a turn point.
+     */
+    private Rectangle createRectangle(int x, int y, int dx, int dy, boolean isTurnPoint) {
+        int rectX = x * CELL_SIZE;
+        int rectY = y * CELL_SIZE;
+
+        int rectWidth = CELL_SIZE;
+        int rectHeight = CELL_SIZE;
+
+        if (!isTurnPoint) {
+            if (dx != 0) {
+                rectHeight = CELL_SIZE - MARGIN;
+                rectY += MARGIN / 2;
+            } else {
+                rectWidth = CELL_SIZE - MARGIN;
+                rectX += MARGIN / 2;
+            }
+        }
+
+        Rectangle r = new Rectangle();
+        r.changeSize(rectHeight, rectWidth);
+        r.makeVisible();
+
+        int deltaX = rectX - r.getX();
+        int deltaY = rectY - r.getY();
+        r.moveHorizontal(deltaX);
+        r.moveVertical(deltaY);
+
+        return r;
+    }
+
+    /**
+     * Changes the direction of movement by rotating 90 degrees clockwise.
+     */
+    private int[] changeDirection(int dx, int dy) {
+        return new int[]{-dy, dx};
+    }
+
+    /**
+     * Creates a circle at the given position on the board and makes it visible.
+     */
+    private Circle createCircle(int x, int y) {
+        Circle c = new Circle(CELL_SIZE + 50);
+        c.changeColor("white");
+        c.moveHorizontal((x * CELL_SIZE) - 13);
+        c.moveVertical((y * CELL_SIZE) - 8);
+        c.makeVisible();
+        return c;
+    }
+
+    /**
+     * Makes all graphic objects in the spiral visible.
+     */
+    public void makeVisible() {
+        for (Rectangle r : rectangles) r.makeVisible();
+        for (Circle c : circles) c.makeVisible();
+    }
+
+    /**
+     * Makes all graphic objects in the spiral invisible.
+     */
+    public void makeInvisible() {
+        for (Rectangle r : rectangles) r.makeInvisible();
+        for (Circle c : circles) c.makeInvisible();
+    }
+
+    /**
+     * Returns the graphic objects contained in a cell.
+     *
+     * @param x X coordinate of the cell
+     * @param y Y coordinate of the cell
+     * @return list of objects in the cell
+     */
+    public ArrayList<Object> getObjectsInCell(int x, int y) {
+        Cell cell = cells.get(x + "," + y);
+        return cell != null ? cell.getObjects() : new ArrayList<>();
+    }
+
+    /**
+     * Gets the coordinates (x, y) of a cell by its location (starting from 1).
+     *
+     * @param location cell index (1 = first cell)
+     * @return array with {x, y} or {@code null} if not exists
+     */
+    public int[] getCellByLocation(int location) {
+        int index = location - 1;
+        if (index >= 0 && index < cellsInOrder.size()) {
+            return cellsInOrder.get(index);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the total number of cells in the spiral.
+     *
+     * @return number of cells
+     */
+    public int getNumberOfCells() {
+        return cellsInOrder.size();
+    }
+}

@@ -1,0 +1,59 @@
+import java.util.ArrayList;
+
+/**
+ * Represents a cell in the spiral path.
+ * Each cell has coordinates (x, y) and can contain multiple graphic objects.
+ */
+public class Cell {
+    private int x;
+    private int y;
+    private ArrayList<Object> objects;
+
+    /**
+     * Creates a cell at the given position.
+     *
+     * @param x X coordinate of the cell
+     * @param y Y coordinate of the cell
+     */
+    public Cell(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.objects = new ArrayList<>();
+    }
+
+    /**
+     * Returns the X coordinate of the cell.
+     *
+     * @return X value
+     */
+    public int getX() {
+        return x;
+    }
+
+    /**
+     * Returns the Y coordinate of the cell.
+     *
+     * @return Y value
+     */
+    public int getY() {
+        return y;
+    }
+
+    /**
+     * Adds a graphic object to the cell.
+     *
+     * @param obj object to be added
+     */
+    public void addObject(Object obj) {
+        objects.add(obj);
+    }
+
+    /**
+     * Returns all the graphic objects in the cell.
+     *
+     * @return list of objects in the cell
+     */
+    public ArrayList<Object> getObjects() {
+        return objects;
+    }
+}

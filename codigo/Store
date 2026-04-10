@@ -1,0 +1,190 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.swing.JOptionPane;
+
+/**
+ * Represents a store on the SilkRoad board.
+ * Each store occupies a cell in the spiral and contains a number of tenges.
+ */
+public class Store {
+    private int location;
+    private int tenges;
+    private int initialTenges;   // 💡 New: store the initial value
+    private int emptiedCount;    // Counter for times emptied
+    private boolean visible;
+
+    private List<Rectangle> rects = new ArrayList<>();
+    private List<Circle> circles = new ArrayList<>();
+
+    private static final int CELL_SIZE = 25;
+
+    private static final List<String> COLORS = Arrays.asList(
+        "black", "red", "blue", "green", "yellow", "cyan", "gray"
+    );
+    private static int colorIndex = 0;
+
+    private String color;
+
+    /**
+     * Creates a new store at a specific location with an initial number of tenges.
+     *
+     * @param location position of the store in the spiral
+     * @param tenges   initial number of tenges in the store
+     */
+    public Store(int location, int tenges) {
+        this.location = location;
+        this.tenges = tenges;
+        this.initialTenges = tenges;  // store initial value
+        this.emptiedCount = 0;
+        this.visible = false;
+        this.color = COLORS.get(colorIndex % COLORS.size());
+        colorIndex++;
+        JOptionPane.showMessageDialog(null, "🏪 Store created at " + location + " with " + tenges + " tenges.");
+    }
+
+    /** Returns the current location of the store. */
+    public int getLocation() { return location; }
+
+    /** Returns the number of tenges stored in the store. */
+    public int getTenges() { return tenges; }
+    
+    /** Returns the total profit given by this store (times emptied × initial value). */
+    public int getTotalGiven() {
+        return emptiedCount * initialTenges;
+    }
+
+    /** Resupplies the store with its initial number of tenges. */
+    public void resupply() {
+        this.tenges = initialTenges;
+        if (visible) {
+            makeInvisible();
+            makeVisible();
+        }
+        JOptionPane.showMessageDialog(null, "🔄 Store at " + location + " restocked with " + initialTenges + " tenges.");
+    }
+
+    /** Empties the store, leaving the tenges at 0. */
+    public void empty() {
+        this.tenges = 0;
+        emptiedCount++;
+        if (visible) {
+            makeInvisible();
+            makeVisible();
+        }
+        JOptionPane.showMessageDialog(null, "⚠ Store at " + location + " emptied. Total times emptied: " + emptiedCount);
+    }
+
+    /** Returns the number of times the store has been emptied. */
+    public int getEmptiedCount() { return emptiedCount; }
+
+    /** Draws the store on the board if it's not already visible. */
+    public void makeVisible() {
+        if (!visible) {
+            if (tenges == 0) {
+                makeEmptyVisual();
+            } else {
+                drawStore();
+            }
+            visible = true;
+        }
+    }
+
+    /** Hides the store and removes its graphical elements. */
+    public void makeInvisible() {
+        for (Rectangle rect : rects) rect.makeInvisible();
+        for (Circle circ : circles) circ.makeInvisible();
+        rects.clear();
+        circles.clear();
+        visible = false;
+    }
+
+    /** Visually constructs the store within the corresponding cell. */
+    private void drawStore() {
+        SpiralRoad spiral = SpiralRoad.getInstance();
+        int[] coordinates = spiral.getCellByLocation(location);
+
+        if (coordinates != null) {
+            int x = coordinates[0];
+            int y = coordinates[1];
+            int offsetX = x * CELL_SIZE - 138;
+            int offsetY = y * CELL_SIZE - 135;
+
+            createRectangle(11, 15, offsetX + 142, offsetY + 145, "black");
+            createRectangle(9, 13, offsetX + 143, offsetY + 146, "white");
+            createRectangle(2, 4, offsetX + 144, offsetY + 148, "blue");
+
+            createCircle(5, offsetX + 145, offsetY + 140, "red");
+            createCircle(5, offsetX + 140, offsetY + 140, "green");
+            createCircle(5, offsetX + 150, offsetY + 140, "green");
+            createCircle(5, offsetX + 155, offsetY + 140, "red");
+
+            createRectangle(6, 4, offsetX + 155, offsetY + 134, "red");
+            createRectangle(6, 4, offsetX + 145, offsetY + 134, "red");
+            createRectangle(6, 4, offsetX + 140, offsetY + 134, "green");
+            createRectangle(6, 4, offsetX + 150, offsetY + 134, "green");
+
+            createRectangle(5, 19, offsetX + 140, offsetY + 133, color);
+            createRectangle(3, 17, offsetX + 141, offsetY + 134, "white");
+
+            createRectangle(7, 5, offsetX + 150, offsetY + 149, color);
+            createRectangle(5, 3, offsetX + 151, offsetY + 150, "white");
+        }
+    }
+
+    private Rectangle createRectangle(int height, int width, int x, int y, String color) {
+        Rectangle r = new Rectangle();
+        r.changeSize(height, width);
+        r.changeColor(color);
+        r.moveHorizontal(x - r.getX());
+        r.moveVertical(y - r.getY());
+        r.makeVisible();
+        rects.add(r);
+        return r;
+    }
+
+    private Circle createCircle(int diameter, int x, int y, String color) {
+        Circle c = new Circle();
+        c.changeSize(diameter);
+        c.changeColor(color);
+        c.moveHorizontal(x - c.getX());
+        c.moveVertical(y - c.getY());
+        c.makeVisible();
+        circles.add(c);
+        return c;
+    }
+
+    /** Alternative visual for when the store is empty (different design). */
+    public void makeEmptyVisual() {
+        makeInvisible(); 
+        SpiralRoad spiral = SpiralRoad.getInstance();
+        int[] coordinates = spiral.getCellByLocation(location);
+
+        if (coordinates != null) {
+            int x = coordinates[0];
+            int y = coordinates[1];
+            int offsetX = x * CELL_SIZE - 138;
+            int offsetY = y * CELL_SIZE - 135;
+
+            createRectangle(11, 15, offsetX + 142, offsetY + 145, "white");
+            createRectangle(9, 13, offsetX + 143, offsetY + 146, color);
+            createRectangle(2, 4, offsetX + 144, offsetY + 148, "white");
+
+            createCircle(5, offsetX + 145, offsetY + 140, "white");
+            createCircle(5, offsetX + 140, offsetY + 140, "white");
+            createCircle(5, offsetX + 150, offsetY + 140, "white");
+            createCircle(5, offsetX + 155, offsetY + 140, "white");
+
+            createRectangle(6, 4, offsetX + 155, offsetY + 134, "white");
+            createRectangle(6, 4, offsetX + 145, offsetY + 134, "white");
+            createRectangle(6, 4, offsetX + 140, offsetY + 134, "white");
+            createRectangle(6, 4, offsetX + 150, offsetY + 134, "white");
+
+            createRectangle(5, 19, offsetX + 140, offsetY + 133, "white");
+            createRectangle(3, 17, offsetX + 141, offsetY + 134, color);
+
+            createRectangle(7, 5, offsetX + 150, offsetY + 149, "white");
+            createRectangle(5, 3, offsetX + 151, offsetY + 150, color);
+        }
+    }
+}
